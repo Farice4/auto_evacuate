@@ -1,12 +1,12 @@
-Name:       eayunstack-novaevacuate
+Name:       eayunstack-auto-evacuate
 Version:    1.0
 Release:    1%{?dist}
-Summary:    EayunStack Novaevacuate Tool
+Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
 License:    GPL
-URL:        https://github.com/eayunstack/novaevacuate
-Source0:    eayunstack-novaevacuate-%{version}.tar.gz
+URL:        http://gitlab.eayun.com:9000/eayunstack/auto-evacuate/
+Source0:    eayunstack-auto-evacuate-%{version}.tar.gz
 
 BuildRequires:  /bin/bash
 BuildRequires:  python
@@ -18,7 +18,7 @@ Requires:   consul
 Requires:   pyghmi
 
 %description
-EayunStack NovaEvacuate Tool
+EayunStack Auto Evacuate Tool
 
 %prep
 %setup -q

@@ -1,8 +1,8 @@
-from novaevacuate.openstack_novaclient import NovaClientObj as nova_client
-from novaevacuate.log import logger
+from openstack_novaclient import NovaClientObj as nova_client
+from log import logger
+
 
 class EvacuateVmAction():
-
     def __init__(self, node):
         self._node = node
 

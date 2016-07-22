@@ -1,6 +1,7 @@
-from novaevacuate.log import logger
+from auto_evacuates.log import logger
 import commands
-from novaevacuate.openstack_novaclient import NovaClientObj as nova_client
+from auto_evacuates.openstack_novaclient import NovaClientObj as nova_client
+
 
 class Net(object):
 
@@ -10,12 +11,8 @@ class Net(object):
     def icmp(self):
         for i in self._compute:
             s, result = commands.getstatusoutput("ping '%s'" % i)
-            if s == 0 and result != None:
+            if s == 0 and result is not None:
                 return True
-
 
     def telnet(self):
         pass
-
-
-

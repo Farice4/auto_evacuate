@@ -4,7 +4,8 @@ Novaevacuate base exception .
 
 import six
 import sys
-from novaevacuate.log import logger
+from log import logger
+
 
 class NovaEvacuateException(Exception):
     """Base Nova Evacuate Exception
@@ -79,5 +80,3 @@ class IPMIFailure(NovaEvacuateException):
 
 class PowerStateFailure(InvalidState):
     _msg_fmt = ("Failed to set node power state to %(pstate)s.")
-
-

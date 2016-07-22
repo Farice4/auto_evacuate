@@ -1,4 +1,4 @@
-# When use novaevacuate, must install follow package
+# When use auto evacuate, must install follow package
 
 pyghmi=1.0.7
 consul=0.6.0

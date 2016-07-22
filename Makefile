@@ -1,4 +1,4 @@
-project_name = eayunstack-netmon
+project_name = eayunstack-auto-evacuate
 version = $(shell grep "Version" netmon.spec | awk '{print $$2}')
 
 sources:

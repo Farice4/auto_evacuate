@@ -1,17 +1,19 @@
 import time
 import commands
-from novaevacuate.log import logger
-from novaevacuate.openstack_novaclient import NovaClientObj as nova_client
-from novaevacuate.evacuate_vm_action import EvacuateVmAction
-from novaevacuate.send_email import Email
+from log import logger
+from openstack_novaclient import NovaClientObj as nova_client
+from evacuate_vm_action import EvacuateVmAction
+from send_email import Email
 
 FENCE_NODES = []
+
 
 class Fence(object):
 
     def compute_fence(self, role, node):
         nova_client.nova_service_disable(node)
-        commands.getoutput("ssh '%s' systemctl stop openstack-nova-compute" % node)
+        commands.getoutput("ssh '%s' systemctl stop openstack-nova-compute"
+                           % node)
 
         logger.warn("%s nova-compute service is disabled."
                     "Nova cloud not create instance in %s" % (node, node))
@@ -27,10 +29,12 @@ class Fence(object):
                     service_down = self.nova_service_status_retry(node)
                     if service_down:
                         self.vm_evacuate(node)
-                        message = "%s service %s had been error " % (node, role)
+                        message = "%s service %s had been error "\
+                                  % (node, role)
                         email = Email()
                         email.send_email(message)
-                        logger.info("send email with %s had been evacuated" % node)
+                        logger.info("send email with %s had been evacuated"
+                                    % node)
                         break
                     else:
                         time.sleep(10)
@@ -42,7 +46,6 @@ class Fence(object):
                 email.send_email(message)
                 logger.info("send email with %s service %s had been error"
                             % (node, role))
-
 
     def compute_fence_recovery(self, node, name):
         # when the node reboot must enable nova-compute enable

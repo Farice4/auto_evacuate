@@ -2,7 +2,7 @@
 import logging
 import logging.config
 
-# ----------------------------------------------------------------------
+
 def log():
     """
     Based on http://docs.python.org/howto/logging.html#configuring-logging
@@ -13,7 +13,7 @@ def log():
             "fileHandler": {
                 "class": "logging.FileHandler",
                 "formatter": "myFormatter",
-                "filename": "/var/log/nova/nova-evacute.log"
+                "filename": "/var/log/nova/auto-evacute.log"
             }
         },
         "loggers": {
@@ -25,7 +25,8 @@ def log():
 
         "formatters": {
             "myFormatter": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                "format": "%(asctime)s - %(name)s - %(levelname)s -"
+                          "%(message)s"
             }
         }
     }

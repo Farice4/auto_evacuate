@@ -1,18 +1,19 @@
 import smtplib
 from email.mime.text import MIMEText
-from novaevacuate.log import logger
+from log import logger
+
 
 class Email(object):
     def __init__(self):
         self._user = "yang.zhou@eayun.com"
-        self._pwd  = "******"
-        self._to   = "419606291@qq.com"
+        self._pwd = "******"
+        self._to = "419606291@qq.com"
 
     def send_email(self, message):
         msg = MIMEText(message)
         msg["Subject"] = "mail from: eayunstack"
-        msg["From"]    = self._user
-        msg["To"]      = self._to
+        msg["From"] = self._user
+        msg["To"] = self._to
         try:
             s = smtplib.SMTP("smtp.exmail.qq.com", timeout=30)
             s.login(self._user, self._pwd)

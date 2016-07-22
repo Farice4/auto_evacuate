@@ -1,6 +1,5 @@
 import commands
 
-
 ENV_VAR_FILE = '/root/openrc'
 
 (s, o) = commands.getstatusoutput('source %s; \
@@ -8,14 +7,14 @@ ENV_VAR_FILE = '/root/openrc'
                                  echo OS_USERNAME=$OS_USERNAME; \
                                  echo OS_PASSWORD=$OS_PASSWORD; \
                                  echo OS_TENANT_NAME=$OS_TENANT_NAME; \
-                                 echo OS_REGION_NAME=$OS_REGION_NAME' \
-                                 % ENV_VAR_FILE)
+                                 echo OS_REGION_NAME=$OS_REGION_NAME'
+                                  % ENV_VAR_FILE)
 
 var = {}
 
 if s == 0:
     for v in o.split('\n'):
-        var[v.split('=')[0]]=v.split('=')[1]
+        var[v.split('=')[0]] = v.split('=')[1]
 
 
 def get_nova_credentials_v2():
