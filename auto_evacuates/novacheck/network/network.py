@@ -47,7 +47,8 @@ class Network(object):
             for t_member in t_members:
                 if t_member['Name'] == which_node and t_member['Status'] != 1:
                     time.sleep(10)
-                elif t_member['Name'] == which_node and t_member['Status'] == 1:
+                elif (t_member['Name'] == which_node and
+                        t_member['Status'] == 1):
                     return True
             flag = flag + 1
         return False
@@ -68,19 +69,25 @@ class Network(object):
                     dict_network['status'] = False
                     dict_network['addr'] = member['Addr']
                     dict_network['role'] = member['Tags']['role']
-                    if IPAddress(member['Addr']) in IPNetwork(self.IPNetwork_m):
+                    if (IPAddress(member['Addr'])
+                            in IPNetwork(self.IPNetwork_m)):
                         dict_network['net_role'] = 'br-mgmt'
-                    elif IPAddress(member['Addr']) in IPNetwork(self.IPNetwork_s):
+                    elif (IPAddress(member['Addr']) in
+                          IPNetwork(self.IPNetwork_s)):
                         dict_network['net_role'] = u'br-storage'
-                    logger.info("%s network %s is down" % (member['Name'],dict_network['net_role']))
+                    logger.info("%s network %s is down" % (
+                        member['Name'], dict_network['net_role']))
                     # append the dict of error-network
                     self.dict_networks.append(dict_network)
                 else:
-                    if IPAddress(member['Addr']) in IPNetwork(self.IPNetwork_m):
+                    if (IPAddress(member['Addr']) in
+                            IPNetwork(self.IPNetwork_m)):
                         net_role = 'br-mgmt'
-                    elif IPAddress(member['Addr']) in IPNetwork(self.IPNetwork_s):
+                    elif (IPAddress(member['Addr']) in
+                            IPNetwork(self.IPNetwork_s)):
                         net_role = 'br-storage'
-                    logger.info("%s network %s is up" % (member['Name'], net_role))
+                    logger.info("%s network %s is up" % (
+                        member['Name'], net_role))
 
 
 def network_retry(node, name):
@@ -109,19 +116,23 @@ def network_retry(node, name):
                 return True
             else:
                 for check_net in check_networks:
-                    if check_net['name'] == node and check_net['net_role'] == name:
-                        logger.error("%s %s recovery failed."
-                                     "Begin execute nova-compute service disable" % (node, name))
+                    if (check_net['name'] == node and
+                            check_net['net_role'] == name):
+                        logger.error("%s %s recovery failed. "
+                                     "Begin execute nova-compute "
+                                     "service disable" % (node, name))
                         return False
         else:
             message = "%s network %s had been error " % (node, name)
             email = Email()
             email.send_email(message)
-            logger.info("send email with %s network %s had been error" % (node, name))
+            logger.info("send email with %s network %s had been error" % (
+                node, name))
             return True
     else:
         logger.info("%s %s recovery Success" % (node, name))
         return True
+
 
 def get_net_status():
     """
@@ -144,7 +155,8 @@ def leader():
     network_obj = Network()
     storage_consul = network_obj.storage_consul
     try:
-        if storage_consul.status.leader() == (network_obj.storage_ip + ":8300"):
+        if (storage_consul.status.leader() ==
+                (network_obj.storage_ip + ":8300")):
             return True
         else:
             return False
