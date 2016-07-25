@@ -5,17 +5,9 @@ from auto_evacuates.novacheck.service.service import novaservice_retry
 from auto_evacuates.novacheck.ipmi.ipmi import get_ipmi_status as ipmi_check
 from auto_evacuates.log import logger
 from auto_evacuates.fence_agent import FENCE_NODES
+from auto_evacuates.fence_agent import Fence
 
 FENCE_NODE = FENCE_NODES
-
-
-class item:
-    def __init__(self):
-        self.node = "null"
-        self.name = "null"
-        self.status = "null"
-        self.ip = "null"
-
 
 def manager():
     # ipmi_checks = ipmi_check()
@@ -29,49 +21,44 @@ def manager():
         # the return none define neterr_node save network check error
         # return data
 
-        network = item()
-        network.node = net_check['name']
-        network.name = net_check['net_role']
-        network.status = net_check['status']
-        network.ip = net_check['addr']
-        NETERR_NODE.append(network.node)
+        network_node = net_check['name']
+        network_name = net_check['net_role']
+        network_status = net_check['status']
+        network_ip = net_check['addr']
+        NETERR_NODE.append(network_node)
 
-        if network.status == "true":
-            logger.info("%s %s status is: %s (%s)" %
-                        (network.node, network.name,
-                         network.status, network.ip))
+        if network_node in FENCE_NODE:
+            logger.info("%s has been fence status,do not execute network"
+                        "retry check" % network_node)
         else:
-            if network.node in FENCE_NODE:
-                logger.info("%s has been fence status,do not execute network"
-                            "retry check" % network.node)
-            else:
-                logger.error("%s %s status is: %s (%s)" %
-                             (network.node, network.name,
-                              network.status, network.ip))
-                network_retry(network.node, network.name)
+            logger.error("%s %s status is: %s (%s)" %
+                         (network_node, network_name,
+                          network_status, network_ip))
+            if not network_retry(network_node, network_name):
+                fence = Fence()
+                fence.compute_fence(network_node, network_name)
 
     for ser_check in ser_checks:
-        service = item()
-        service.node = ser_check['node']
-        service.type = ser_check['datatype']
-        service.status = ser_check['status']
+        service_node = ser_check['node']
+        service_type = ser_check['datatype']
+        service_status = ser_check['status']
 
         # when compute node recovery, will remove node from
         # FENCE_NODES node name
-        if service.node in FENCE_NODE:
-            if (service.node not in NETERR_NODE) and (service.status == "up"):
-                FENCE_NODE.remove(service.node)
+        if service_node in FENCE_NODE:
+            if (service_node not in NETERR_NODE) and (service_status == "up"):
+                FENCE_NODE.remove(service_node)
 
-        if service.status == "up":
-            logger.info("%s %s status is: up" % (service.node, service.type))
-        elif service.status == "down" or service.status == "unknown":
-            if service.node in FENCE_NODE:
-                logger.info("%s %s status is: %s" % (service.node,
-                                                     service.type,
-                                                     service.status))
+        if service_status == "up":
+            logger.info("%s %s status is: up" % (service_node, service_type))
+        elif service_status == "down" or service_status == "unknown":
+            if service_node in FENCE_NODE:
+                logger.info("%s %s status is: %s" % (service_node,
+                                                     service_type,
+                                                     service_status))
                 logger.info("%s has been fence status, do not execute service"
-                            "retry check" % service.node)
+                            "retry check" % service_node)
             else:
                 logger.error("%s %s status is: %s" %
-                             (service.node, service.name, service.status))
-                novaservice_retry(service.node, service.type)
+                             (service_node, service_name, service_status))
+                novaservice_retry(service_node, service_type)

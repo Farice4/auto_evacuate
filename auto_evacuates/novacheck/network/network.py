@@ -6,7 +6,6 @@ import struct
 import time
 from netaddr import IPNetwork, IPAddress
 from auto_evacuates.log import logger
-from auto_evacuates.fence_agent import Fence
 from auto_evacuates.send_email import Email
 
 
@@ -66,14 +65,14 @@ class Network(object):
                 if member['Status'] != 1:
                     name = member['Name'].split('_')
                     dict_network['name'] = name[1]
-                    dict_network['status'] = u'false'
+                    dict_network['status'] = False
                     dict_network['addr'] = member['Addr']
                     dict_network['role'] = member['Tags']['role']
                     if IPAddress(member['Addr']) in IPNetwork(self.IPNetwork_m):
                         dict_network['net_role'] = 'br-mgmt'
                     elif IPAddress(member['Addr']) in IPNetwork(self.IPNetwork_s):
                         dict_network['net_role'] = u'br-storage'
-                    logger.info("%s network %s is up" % (member['Name'],dict_network['net_role']))
+                    logger.info("%s network %s is down" % (member['Name'],dict_network['net_role']))
                     # append the dict of error-network
                     self.dict_networks.append(dict_network)
                 else:
@@ -101,25 +100,28 @@ def network_retry(node, name):
             commands.getstatusoutput("ssh %s ifdown %s" % (node, name))
             time.sleep(2)
             commands.getstatusoutput("ssh %s ifup %s" % (node, name))
-            logger.info("ssh %s ifup %s" % (node, name))
-            time.sleep(20)
+            logger.info("try to recovery %s %s" % (node, name))
+            time.sleep(30)
             check_networks = get_net_status()
             # todo: node_check(node,name)
             if not check_networks:
                 logger.info("%s %s recovery Success" % (node, name))
+                return True
             else:
                 for check_net in check_networks:
                     if check_net['name'] == node and check_net['net_role'] == name:
                         logger.error("%s %s recovery failed."
                                      "Begin execute nova-compute service disable" % (node, name))
-                        fence = Fence()
-                        fence.compute_fence(role, node)
+                        return False
         else:
             message = "%s network %s had been error " % (node, name)
             email = Email()
             email.send_email(message)
             logger.info("send email with %s network %s had been error" % (node, name))
-
+            return True
+    else:
+        logger.info("%s %s recovery Success" % (node, name))
+        return True
 
 def get_net_status():
     """
