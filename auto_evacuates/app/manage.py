@@ -3,6 +3,7 @@ from auto_evacuates.novacheck.service.service import get_service_status
 from auto_evacuates.novacheck.network.network import network_retry
 from auto_evacuates.novacheck.service.service import novaservice_retry
 from auto_evacuates.novacheck.ipmi.ipmi import get_ipmi_status as ipmi_check
+from evacuate_vm_action import EvacuateVmAction
 from auto_evacuates.log import logger
 from auto_evacuates.fence_agent import FENCE_NODES
 from auto_evacuates.fence_agent import Fence
@@ -37,11 +38,12 @@ def manager():
                           network_status, network_ip))
             if not network_retry(network_node, network_name):
                 if network_name == 'br-storage':
-                    role = "network"
-                    node = network_node
-                    name = network_name
                     fence = Fence()
-                    fence.compute_fence(role, node, name)
+                    if fence.compute_fence('network',
+                                           network_node,
+                                           network_name):
+                        nova_evacuate = EvacuateVmAction(network_node)
+                        nova_evacuate.run()
 
     for ser_check in ser_checks:
         service_node = ser_check['node']
@@ -67,6 +69,6 @@ def manager():
             else:
                 logger.error("%s %s status is: %s" %
                              (service_node, service_type, service_status))
-                if novaservice_retry(service_node, service_type):
-                    logger.info("%s %s has auto recovery" % (service_node,
-                                                             service_type))
+                if not novaservice_retry(service_node, service_type):
+                    fence = Fence()
+                    fence.compute_fence('service', service_node, service_type)

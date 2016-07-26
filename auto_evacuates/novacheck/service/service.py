@@ -7,7 +7,6 @@ import commands
 import time
 from auto_evacuates.log import logger
 from auto_evacuates.openstack_novaclient import NovaClientObj as nova_client
-from auto_evacuates.fence_agent import Fence
 from auto_evacuates.fence_agent import FENCE_NODES
 
 FENCE_NODE = FENCE_NODES
@@ -18,7 +17,7 @@ class NovaService(object):
     def __init__(self):
         self.service, self.compute = nova_client.get_compute()
 
-    def sys_compute(self, compute):
+    def sys_compute(self):
         """use systemctl check openstack-nova-compute service message
 
         return: sys_com data format list
@@ -26,7 +25,7 @@ class NovaService(object):
         logger.info("openstack-nova-compute service start check")
 
         sys_com = []
-        for i in compute:
+        for i in self.compute:
             (s, o) = commands.getstatusoutput("ssh '%s' systemctl -a|grep "
                                               "openstack-nova-compute" % i)
             if s == 0 and o is not None:
@@ -95,7 +94,7 @@ def get_service_status():
 
     nova_status = []
     ns = NovaService()
-    for i in ns.sys_compute(ns.compute):
+    for i in ns.sys_compute():
         nova_status.append(i)
 
     for n in ns.ser_compute():
@@ -111,37 +110,18 @@ def novaservice_retry(node, datatype):
     compute = []
     compute.append(node)
     ns = NovaService()
-    fence = Fence()
-    role = "service"
+    compute_func = {"novaservice": ns.ser_compute,
+                    "novacompute": ns.sys_compute}
 
-    if datatype == "novaservice":
-        for i in range(3):
-            logger.warn("%s %s start retry %d check" % (node, datatype, i+1))
-            status = ns.ser_compute()
-            for n in status:
-                if node in n.values() and 'up' in n.values():
-                    # when retry, the node ser_compute service auto recovery,
-                    # set count = retry_count
-                    return True
-            time.sleep(10)
-
+    for i in range(3):
+        logger.warn("%s %s start retry %d check" % (node, datatype, i + 1))
+        status = compute_func[datatype]()
         for n in status:
-            # Execute three times after,get status data, the data only the
-            # third data.
-            if "down" in n.values():
-                fence.compute_fence(role, node, datatype)
+            if node in n.values() and 'up' in n.values():
+                # when retry, the node ser_compute service auto recovery,
+                # set count = retry_count
+                logger.info("%s %s has auto recovery" % (node, datatype))
+                return True
+        time.sleep(10)
 
-    elif datatype == "novacompute":
-        for i in range(3):
-            logger.warn("%s %s start retry %d check" % (node, datatype, i+1))
-            status = ns.sys_compute(compute)
-            for n in status:
-                if node in n.values() and 'up' in n.values():
-                    # when retry, the node ser_compute service auto recovery,
-                    # set count = retry_count
-                    return True
-            time.sleep(10)
-
-        for n in status:
-            if "down" in n.values() or "unknown" in n.values():
-                fence.compute_fence(role, node, datatype)
+    return False

@@ -2,7 +2,6 @@ import time
 import commands
 from log import logger
 from openstack_novaclient import NovaClientObj as nova_client
-from evacuate_vm_action import EvacuateVmAction
 from send_email import Email
 # from novacheck.ipmi.ipmi import power_off
 
@@ -32,14 +31,13 @@ class Fence(object):
                 while True:
                     service_down = self.nova_service_status(node)
                     if service_down:
-                        self.vm_evacuate(node)
                         message = "%s service %s had been error "\
                                   % (node, name)
                         email = Email()
                         email.send_email(message)
-                        logger.info("send email with %s had been evacuated"
+                        logger.info("the %s of instances will be evacuated"
                                     % node)
-                        break
+                        return True
                     time.sleep(10)
             else:
                 message = "%s service %s had been error " % (node, name)
@@ -52,13 +50,6 @@ class Fence(object):
         # when the node reboot must enable nova-compute enable
         nova_client.nova_service_enable(node)
         logger.info("%s nova-compute service is enabled.")
-
-    def vm_evacuate(self, node):
-        """When execute fence after, the error node will be evacuate
-
-        """
-        nova_evacuate = EvacuateVmAction(node)
-        nova_evacuate.run()
 
     def nova_service_status(self, node):
         """When execute evacuate, you must get service-list status disabled

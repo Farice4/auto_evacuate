@@ -95,7 +95,6 @@ def network_retry(node, name):
     try to restore the network ,if no carried out fence
     """
 
-    role = "network"
     net_obj = Network()
     if name == 'br-storage':
         network = net_obj.storage_consul
@@ -159,4 +158,4 @@ def leader():
         else:
             return False
     except Exception as e:
-        logger.info("can't get consul leader, the reason is: %e" % e)
+        logger.info("can't get consul leader, the reason is: %s" % e)
