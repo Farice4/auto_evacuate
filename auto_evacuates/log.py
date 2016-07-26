@@ -1,6 +1,10 @@
 # log_with_config.py
 import logging
 import logging.config
+from config import CONF
+
+LOG_FILE = CONF.get('log', 'file')
+LOG_LEVEL = CONF.get('log', 'default')
 
 
 def log():
@@ -13,13 +17,13 @@ def log():
             "fileHandler": {
                 "class": "logging.FileHandler",
                 "formatter": "myFormatter",
-                "filename": "/var/log/nova/auto-evacute.log"
+                "filename": "%s" % LOG_FILE
             }
         },
         "loggers": {
             "compute": {
                 "handlers": ["fileHandler"],
-                "level": "INFO",
+                "level": "%s" % LOG_LEVEL,
             }
         },
 

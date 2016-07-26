@@ -1,70 +1,50 @@
 import time
-import commands
 from log import logger
 from openstack_novaclient import NovaClientObj as nova_client
-from evacuate_vm_action import EvacuateVmAction
+from novacheck.service.service import ServiceManage
 from send_email import Email
 # from novacheck.ipmi.ipmi import power_off
 
-FENCE_NODES = []
-
 
 class Fence(object):
+    def __init__(self):
+        self.server_manage = ServiceManage()
 
-    def compute_fence(self, role, node, name):
-        if not self.nova_service_status(node):
-            nova_client.nova_service_disable(node)
-        commands.getoutput("ssh '%s' systemctl stop openstack-nova-compute"
-                           % node)
-        logger.warn("%s nova-compute service is disabled."
-                    "Nova can not create instance in %s" % (node, node))
-
-        # logger.warn("%s will be shutdown system" % node)
-        # power_off()
-
-        # add Fence node to global FENCE_NODES list
-        if node in FENCE_NODES:
-            logger.info("%s has been fence status" % node)
-        else:
-            FENCE_NODES.append(node)
-
-            if role == "network":
+    def fence_node(self, role, node, name):
+        """when compute br-storage has down, will be execute
+       openstack-nova-compute stop, nova-service disable,
+       when openstack-nova-compute has stop, will be execute
+       nova-service disable
+       """
+        if role == "network":
+            self.server_manage.stop_nova_compute(node)
+            if not self._nova_service_status(node):
+                nova_client.nova_service_disable(node)
                 while True:
-                    service_down = self.nova_service_status(node)
+                    service_down = self._nova_service_status(node)
                     if service_down:
-                        self.vm_evacuate(node)
                         message = "%s service %s had been error "\
                                   % (node, name)
                         email = Email()
                         email.send_email(message)
                         logger.info("send email with %s had been evacuated"
                                     % node)
-                        break
+                        return True
                     time.sleep(10)
-            else:
+
+        elif role == "service":
+            self.server_manage.stop_nova_compute(node)
+            if not self._nova_service_status(node):
+                nova_client.nova_service_disable(node)
                 message = "%s service %s had been error " % (node, name)
                 email = Email()
                 email.send_email(message)
                 logger.info("send email with %s service %s had been error"
                             % (node, name))
 
-    def compute_fence_recovery(self, node):
-        # when the node reboot must enable nova-compute enable
-        nova_client.nova_service_enable(node)
-        logger.info("%s nova-compute service is enabled.")
-
-    def vm_evacuate(self, node):
-        """When execute fence after, the error node will be evacuate
-
-        """
-        nova_evacuate = EvacuateVmAction(node)
-        nova_evacuate.run()
-
-    def nova_service_status(self, node):
+    def _nova_service_status(self, node):
         """When execute evacuate, you must get service-list status disabled
         state down
-
-        :return: True or False
         """
         service_status = nova_client.service_status()
         if service_status:
@@ -77,5 +57,3 @@ class Fence(object):
                         logger.warn("%s has error, the instance will"
                                     "evacuate" % node)
                         return True
-                    else:
-                        return False

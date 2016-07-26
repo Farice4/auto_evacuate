@@ -2,22 +2,22 @@ from pyghmi import exceptions as pyghmi_exception
 from pyghmi.ipmi import command as ipmi_command
 from auto_evacuates.log import logger
 from auto_evacuates import exception
-from ipmi_ip import ipaddr_get
+from ipmi_plugin import ipaddr_get
 
 
 class IpmiPower(object):
 
-    def __init__(self, node, user, passwd):
+    def __init__(self, ip, user, passwd):
         """
-        :param node: idrac lan enable after config ip address
+        :param ip: idrac lan enable after config ip address
         :param user: idrac username,dell default root user
         :param passwd: idrac root user password
         :return:
         """
 
-        self.ip = node
-        self.user = user
-        self.passwd = passwd
+        self.ip = None
+        self.user = None
+        self.passwd = None
 
     def _power_status(self):
         """Get the power status for this node.
@@ -129,21 +129,32 @@ class IpmiPower(object):
         #    raise exception.PowerStateFailure(pstate=state)
 
 
-def get_ipmi_status():
-    """Use get_ipmi_status get ipmi check data,  External interface to other
+class IpmiManage(object):
+    """Use IpmiManage class manage extenal schedule"""
+    def __init__(self, user, passwd):
+        """init IpmiPower class"""
+        # self.ip = self.get_ip()
+        self.user = user
+        self.passwd = passwd
+        self.power = IpmiPower(self.node, self.user, self.passwd)
 
-    :return: one
-    """
-    ip = ipaddr_get()
-    for i in ip:
-        name = i['nodename']
-        node = i['ip']
-        s = IpmiPower(node, user=None, passwd=None)
-        s._power_status()
+    def power_status(self):
+        """auto evacuate check node power status"""
+        for ip in self.get_ip():
+            self.power._power_status(ip, self.user, self.passwd)
 
+    def power_off(self, node):
+        """power_off shutdown faild node, Use Ipmi_Power function _power_off
+        faild node transfer a faild node name, use power off or system init 0
+        """
+        pass
 
-def power_off(node=None, user=None, passwd=None):
-    """power_off shutdown faild node, Use Ipmi_Power function _power_off
-    """
-    s = IpmiPower(node, user, passwd)
-    s._power_off()
+    def get_ip(self):
+        """Use ipaddr_get function get idrac ip address"""
+        ipaddr = []
+        ip = ipaddr_get()
+        for i in ip:
+            name = i['nodename']
+            ipaddr.append(i['ip'])
+
+        return ipaddr

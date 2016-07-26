@@ -1,14 +1,14 @@
 import smtplib
 from email.mime.text import MIMEText
 from log import logger
-# from config import CONF
+from config import CONF
 
 
 class Email(object):
     def __init__(self):
-        self._user = "yang.zhou@eayun.com"
-        self._pwd = "******"
-        self._to = "419606291@qq.com"
+        self._user = CONF.get('mail', 'user')
+        self._pwd = CONF.get('mail', 'passwd')
+        self._to = CONF.get('mail', 'mail_address')
 
     def send_email(self, message):
         msg = MIMEText(message)
