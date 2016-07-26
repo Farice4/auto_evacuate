@@ -1,6 +1,8 @@
 import commands
+from config import CONF
 
-ENV_VAR_FILE = '/root/openrc'
+# ENV_VAR_FILE = '/root/openrc'
+ENV_VAR_FILE = CONF.get('auth', 'file')
 
 (s, o) = commands.getstatusoutput('source %s; \
                                  echo OS_AUTH_URL=$OS_AUTH_URL; \

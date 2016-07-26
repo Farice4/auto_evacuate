@@ -1,27 +1,25 @@
-from ConfigParser import RawConfigParser, NoOptionError, NoSectionError
-from log import logger
+import ConfigParser
+
+"""Use ConfigParser define all config,other module use
+    config module get data
+"""
 
 FILE_PATH = '/etc/autoevacuate/evacuate.conf'
 
 
-class Config(RawConfigParser):
+class Config(object):
     """ Load config file"""
-    def __init__(self):
-        RawConfigParser.__init__()
+    def __init__(self, filename):
+        self.cf = ConfigParser.ConfigParser()
+        self.file_name = filename
+        self.read_file = self.read_config()
 
-    def read_file(self, file_name):
-        file_name = file_name
-        try:
-            RawConfigParser.read(self, file_name)
-        except TypeError:
-            RawConfigParser.read(self, file_name)
+    def read_config(self):
+        """define config file read"""
+        self.cf.read(self.file_name)
 
-    def _get(self, option, section):
-        """facility for RawCOnfigParser.get"""
-        try:
-            return RawConfigParser.get(self, section, option)
-        except (NoOptionError, NoSectionError):
-            msg = (NoOptionError, NoSectionError)
-            logger.warn(msg)
+    def get(self, section, option):
+        """define config file data get"""
+        return self.cf.get(section, option)
 
-CONF = Config()
+CONF = Config(FILE_PATH)
