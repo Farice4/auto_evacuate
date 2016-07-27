@@ -42,9 +42,9 @@ class Network(object):
         flag = 0
         while flag < 3:
             if name == 'br-storage':
-                network = consul.Consul(host=self.net_obj.storage_ip, port=8500)
+                network = consul.Consul(host=self.storage_ip, port=8500)
             else:
-                network = consul.Consul(host=self.net_obj.mgmt_ip, port=8500)
+                network = consul.Consul(host=self.mgmt_ip, port=8500)
             t_members = network.agent.members()
             for t_member in t_members:
                 if t_member['Name'] == node and t_member['Status'] != 1:
