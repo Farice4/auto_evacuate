@@ -1,6 +1,6 @@
-from auto_evacuates.novacheck.network.network import get_net_status
+from auto_evacuates.novacheck.network.network import Net_Interface
 from auto_evacuates.novacheck.service.service import get_service_status
-from auto_evacuates.novacheck.network.network import network_retry
+#from auto_evacuates.novacheck.network.network import network_retry
 from auto_evacuates.novacheck.service.service import novaservice_retry
 from auto_evacuates.novacheck.ipmi.ipmi import get_ipmi_status as ipmi_check
 from auto_evacuates.log import logger
@@ -12,8 +12,8 @@ FENCE_NODE = FENCE_NODES
 
 def manager():
     # ipmi_checks = ipmi_check()
-    net_checks = get_net_status()
-    ser_checks = get_service_status()
+    net_obj = Net_Interface()
+    net_checks = net_obj.get_net_status()
 
     # get network  error list
     error_network_node = []
@@ -35,7 +35,7 @@ def manager():
             logger.error("%s %s status is: %s (%s)" %
                          (network_node, network_name,
                           network_status, network_ip))
-            if not network_retry(network_node, network_name):
+            if not net_obj.network_retry(network_node, network_name):
                 if network_name == 'br-storage':
                     role = "network"
                     node = network_node
@@ -43,6 +43,7 @@ def manager():
                     fence = Fence()
                     fence.compute_fence(role, node, name)
 
+    ser_checks = get_service_status()
     for ser_check in ser_checks:
         service_node = ser_check['node']
         service_type = ser_check['datatype']

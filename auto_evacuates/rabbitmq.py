@@ -5,18 +5,18 @@ import ConfigParser
 class Py_Rabbitmq(object):
     def __init__(self):
         self.user = 'nova'
-        self.pwd = 'irxscf28'
         self.port = 5673
         self.msg_list = []
 
     def rbt_connection(self):
         cf = ConfigParser.ConfigParser()
         cf.read("/etc/nova/nova.conf")
+        pwd = cf.get("DEFAULT", "rabbit_password")
         hosts = cf.get("DEFAULT", "rabbit_hosts")
         hosts_list = hosts.split(',')
         for host_list in hosts_list:
             host = host_list.split(':')
-            credential = pika.PlainCredentials(self.user, self.pwd)
+            credential = pika.PlainCredentials(self.user, pwd)
             try:
                 pid = pika.ConnectionParameters(
                         host[0], self.port, '/', credential)

@@ -1,5 +1,5 @@
 from auto_evacuates.app import manage
-from auto_evacuates.novacheck.network.network import leader
+from auto_evacuates.novacheck.network.network import Net_Interface
 from auto_evacuates.log import logger
 import time
 import os
@@ -10,12 +10,13 @@ def main():
     the program until background running
 
     """
+    led = Net_Interface()
     pid = os.fork()
     if pid == 0:
         os.setsid()
         while True:
             try:
-                if leader():
+                if led.leader():
                     manage.manager()
                 else:
                     logger.info("node is not leader,do not any check")

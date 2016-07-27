@@ -11,30 +11,28 @@ from auto_evacuates.send_email import Email
 
 class Network(object):
     def __init__(self):
-        self.mgmt_ip = self.get_ip_address('br-mgmt')
-        self.storage_ip = self.get_ip_address('br-storage')
-        self.mgmt_consul = consul.Consul(host=self.mgmt_ip, port=8500)
-        self.storage_consul = consul.Consul(host=self.storage_ip, port=8500)
-        self.dict_networks = []
-        (m, self.IPNetwork_m) = commands.getstatusoutput("LANG=C ip a show "
-                                                         "br-mgmt | awk '/"
-                                                         "inet /{ print $2 }'")
-        (s, self.IPNetwork_s) = commands.getstatusoutput("LANG=C ip a show "
-                                                         "br-storage | awk '/"
-                                                         "inet /{ print $2 }'")
+        try:        
+            (self.mgmt_ip, self.IPNetwork_m) = self.get_ip_addr_net('br-mgmt')
+            (self.storage_ip, self.IPNetwork_s) = self.get_ip_addr_net('br-storage')
+            self.dict_networks = []
+        except Exception:
+            logger.error("network init error!!")
 
-    def get_ip_address(self, ifname):
-        """
-        get local ip addr
-        """
 
+    def get_ip_addr_net(self, ifname):
+        """
+        get local ip addr and ip network
+        """
+        (n, ipnetwork) = commands.getstatusoutput("LANG=C ip a show "
+                                                  "%s | awk '/"
+                                                  "inet /{ print $2 }'" % ifname)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         return socket.inet_ntoa(fcntl.ioctl(s.fileno(),
                                             0x8915,  # SIOCGIFADDR
                                             struct.pack('256s', ifname[:15])
-                                            )[20:24])
+                                            )[20:24]), ipnetwork
 
-    def network_confirm(self, node, network):
+    def network_confirm(self, node, name):
         """
         retry three times to confirm the network,
         if confirm the network had died return True ,else return False
@@ -43,6 +41,10 @@ class Network(object):
         time.sleep(10)
         flag = 0
         while flag < 3:
+            if name == 'br-storage':
+                network = consul.Consul(host=self.net_obj.storage_ip, port=8500)
+            else:
+                network = consul.Consul(host=self.net_obj.mgmt_ip, port=8500)
             t_members = network.agent.members()
             for t_member in t_members:
                 if t_member['Name'] == node and t_member['Status'] != 1:
@@ -53,7 +55,7 @@ class Network(object):
             flag = flag + 1
         return False
 
-    def server_network_status(self, network):
+    def server_network_status(self, network, dict_networks):
         """
         Traversal all networks , when someone error ,
         assignment to dict and append to list
@@ -78,7 +80,7 @@ class Network(object):
                     logger.info("%s network %s is down" % (
                         member['Name'], dict_network['net_role']))
                     # append the dict of error-network
-                    self.dict_networks.append(dict_network)
+                    dict_networks.append(dict_network)
                 else:
                     if (IPAddress(member['Addr']) in
                             IPNetwork(self.IPNetwork_m)):
@@ -90,73 +92,72 @@ class Network(object):
                         member['Name'], net_role))
 
 
-def network_retry(node, name):
-    """
-    try to restore the network ,if no carried out fence
-    """
+class Net_Interface(object):
+    def __init__(self):
+        self.net_obj = Network()
 
-    role = "network"
-    net_obj = Network()
-    if name == 'br-storage':
-        network = net_obj.storage_consul
-    else:
-        network = net_obj.mgmt_consul
-    # when searched one network error , sleep awhile ,if it can restore auto
-    if not net_obj.network_confirm(node, network):
-        if name == 'br-storage':
-            commands.getstatusoutput("ssh %s ifdown %s" % (node, name))
-            time.sleep(2)
-            commands.getstatusoutput("ssh %s ifup %s" % (node, name))
-            logger.info("try to recovery %s %s" % (node, name))
-            time.sleep(30)
-            check_networks = get_net_status()
-            # todo: node_check(node,name)
-            for check_net in check_networks:
-                if (check_net['name'] == node and
-                        check_net['net_role'] == 'br-storage'):
-                    logger.error("%s %s recovery failed. "
-                                 "Begin execute nova-compute "
-                                 "service disable" % (node, name))
-                    return False
+    def network_retry(self, node, name):
+        """
+        try to restore the network ,if no carried out fence
+        """
+
+        # when searched one network error , sleep awhile ,if it can restore auto
+        if not self.net_obj.network_confirm(node, name):
+            if name == 'br-storage':
+                commands.getstatusoutput("ssh %s ifdown %s" % (node, name))
+                time.sleep(2)
+                commands.getstatusoutput("ssh %s ifup %s" % (node, name))
+                logger.info("try to recovery %s %s" % (node, name))
+                time.sleep(30)
+                check_networks = self.get_net_status()
+                # todo: node_check(node,name)
+                for check_net in check_networks:
+                    if (check_net['name'] == node and
+                            check_net['net_role'] == 'br-storage'):
+                        logger.error("%s %s recovery failed. "
+                                     "Begin execute nova-compute "
+                                     "service disable" % (node, name))
+                        return False
+                logger.info("%s %s recovery Success" % (node, name))
+                return True
+            else:
+                message = "%s network %s had been error " % (node, name)
+                email = Email()
+                email.send_email(message)
+                logger.info("send email with %s network %s had been error" % (
+                    node, name))
+                return False
+        else:
             logger.info("%s %s recovery Success" % (node, name))
             return True
-        else:
-            message = "%s network %s had been error " % (node, name)
-            email = Email()
-            email.send_email(message)
-            logger.info("send email with %s network %s had been error" % (
-                node, name))
-            return False
-    else:
-        logger.info("%s %s recovery Success" % (node, name))
-        return True
 
 
-def get_net_status():
-    """
-    :return: list of error network
-    """
+    def get_net_status(self):
+        """
+        :return: list of error network
+        """
 
-    network_obj = Network()
-    logger.info("start network check")
-    network_obj.server_network_status(network_obj.mgmt_consul)
-    network_obj.server_network_status(network_obj.storage_consul)
-    return network_obj.dict_networks
+        dict_networks = []
+        logger.info("start network check")
+        mgmt_consul = consul.Consul(host=self.net_obj.mgmt_ip, port=8500)
+        storage_consul = consul.Consul(host=self.net_obj.storage_ip, port=8500)
+        self.net_obj.server_network_status(mgmt_consul, dict_networks)
+        self.net_obj.server_network_status(storage_consul, dict_networks)
+        return dict_networks
 
 
-# return current  leader
-def leader():
-    """
-    return current  leader
-    """
+    # return current  leader
+    def leader(self):
+        """
+        return current  leader
+        """
 
-    network_obj = Network()
-    storage_consul = network_obj.storage_consul
-    try:
-        if (storage_consul.status.leader() ==
-                (network_obj.storage_ip + ":8300")):
-            return True
-        else:
-            return False
-    except Exception as e:
-        logger.info("can't get consul leader, the reason is: %e" % e)
+        storage_consul = consul.Consul(self.net_obj.storage_ip, 8500)
+        try:
+            if (storage_consul.status.leader() ==
+                    (self.net_obj.storage_ip + ":8300")):
+                return True
+            else:
+                return False
+        except Exception as e:
+            logger.info("can't get consul leader, the reason is: %e" % e)
