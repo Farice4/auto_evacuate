@@ -5,10 +5,12 @@ service-disable node, but do not execute evacuate.
 """
 import commands
 import time
+import eventlet
 from auto_evacuates.log import logger
 from auto_evacuates.openstack_novaclient import NovaClientObj as nova_client
 from auto_evacuates.fence_agent import Fence
 from auto_evacuates.fence_agent import FENCE_NODES
+
 
 FENCE_NODE = FENCE_NODES
 
@@ -19,30 +21,41 @@ class NovaService(object):
         self.service, self.compute = nova_client.get_compute()
 
     def sys_compute(self, compute):
-        """use systemctl check openstack-nova-compute service message
-
+        """Use eventlet spawn call compute_check get
+           opoenstack-nova-compute service status
         return: sys_com data format list
         """
         logger.info("openstack-nova-compute service start check")
-
         sys_com = []
-        for i in compute:
-            (s, o) = commands.getstatusoutput("ssh '%s' systemctl -a|grep "
-                                              "openstack-nova-compute" % i)
+
+        def compute_check(ip):
+            """ Use eventlet timeout config, When compute shutdown or
+                mgmt network has error
+            """
+            with eventlet.Timeout(5, False):
+                (s, o) = commands.getstatusoutput("ssh '%s' systemctl -a|grep "
+                                                  "openstack-nova-compute"
+                                                  % ip)
             if s == 0 and o is not None:
                 if 'running' in o and 'active' in o:
-                    sys_com.append({"node": i, "status": "up",
+                    sys_com.append({"node": ip, "status": "up",
                                     "datatype": "novacompute"})
                 elif 'dead' in o and 'inactive' in o:
-                    sys_com.append({"node": i, "status": "down",
+                    sys_com.append({"node": ip, "status": "down",
                                     "datatype": "novacompute"})
                 elif 'failed' in o:
-                    sys_com.append({"node": i, "status": "down",
+                    sys_com.append({"node": ip, "status": "down",
                                     "datatype": "novacompute"})
             else:
-                sys_com.append({"node": i, "status": "unknown",
+                sys_com.append({"node": ip, "status": "unknown",
                                 "datatype": "novacompute"})
-                logger.warn("%s openstack-nova-compute service unknown" % i)
+                logger.warn("%s openstack-nova-compute service unknown" % ip)
+
+        # use eventlet create green pool, use pool call function
+        pool = eventlet.GreenPool()
+        for ip in compute:
+            pool.spawn(compute_check, ip)
+        pool.waitall()
 
         return sys_com
 
@@ -124,12 +137,8 @@ def novaservice_retry(node, datatype):
                     # set count = retry_count
                     return True
             time.sleep(10)
-
-        for n in status:
-            # Execute three times after,get status data, the data only the
-            # third data.
-            if "down" in n.values():
-                fence.compute_fence(role, node, datatype)
+        # Execute three times after, function not return, will be execute fence
+        fence.compute_fence(role, node, datatype)
 
     elif datatype == "novacompute":
         for i in range(3):
@@ -141,7 +150,5 @@ def novaservice_retry(node, datatype):
                     # set count = retry_count
                     return True
             time.sleep(10)
-
-        for n in status:
-            if "down" in n.values() or "unknown" in n.values():
-                fence.compute_fence(role, node, datatype)
+        # Execute three times after, function not return, will be execute fence
+        fence.compute_fence(role, node, datatype)
