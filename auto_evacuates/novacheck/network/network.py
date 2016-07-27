@@ -11,13 +11,13 @@ from auto_evacuates.send_email import Email
 
 class Network(object):
     def __init__(self):
-        try:        
+        try:
             (self.mgmt_ip, self.IPNetwork_m) = self.get_ip_addr_net('br-mgmt')
-            (self.storage_ip, self.IPNetwork_s) = self.get_ip_addr_net('br-storage')
+            (self.storage_ip, self.IPNetwork_s) = self.get_ip_addr_net(
+                    'br-storage')
             self.dict_networks = []
         except Exception:
             logger.error("network init error!!")
-
 
     def get_ip_addr_net(self, ifname):
         """
@@ -25,7 +25,8 @@ class Network(object):
         """
         (n, ipnetwork) = commands.getstatusoutput("LANG=C ip a show "
                                                   "%s | awk '/"
-                                                  "inet /{ print $2 }'" % ifname)
+                                                  "inet /{ print $2 }'"
+                                                  % ifname)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         return socket.inet_ntoa(fcntl.ioctl(s.fileno(),
                                             0x8915,  # SIOCGIFADDR
@@ -101,7 +102,8 @@ class Net_Interface(object):
         try to restore the network ,if no carried out fence
         """
 
-        # when searched one network error , sleep awhile ,if it can restore auto
+        # when searched one network error , sleep awhile
+        # if it can restore auto
         if not self.net_obj.network_confirm(node, name):
             if name == 'br-storage':
                 commands.getstatusoutput("ssh %s ifdown %s" % (node, name))
@@ -131,7 +133,6 @@ class Net_Interface(object):
             logger.info("%s %s recovery Success" % (node, name))
             return True
 
-
     def get_net_status(self):
         """
         :return: list of error network
@@ -144,7 +145,6 @@ class Net_Interface(object):
         self.net_obj.server_network_status(mgmt_consul, dict_networks)
         self.net_obj.server_network_status(storage_consul, dict_networks)
         return dict_networks
-
 
     # return current  leader
     def leader(self):

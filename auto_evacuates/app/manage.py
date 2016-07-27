@@ -1,6 +1,5 @@
 from auto_evacuates.novacheck.network.network import Net_Interface
 from auto_evacuates.novacheck.service.service import get_service_status
-#from auto_evacuates.novacheck.network.network import network_retry
 from auto_evacuates.novacheck.service.service import novaservice_retry
 from auto_evacuates.novacheck.ipmi.ipmi import get_ipmi_status as ipmi_check
 from auto_evacuates.log import logger
