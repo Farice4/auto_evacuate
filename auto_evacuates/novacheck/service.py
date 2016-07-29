@@ -4,15 +4,11 @@ If nova service check get service false, the nova service will be execute nova
 service-disable node, but do not execute evacuate.
 """
 import commands
-import time
 import eventlet
 from auto_evacuates.log import logger
 from auto_evacuates.openstack_novaclient import NovaClientObj as nova_client
-from auto_evacuates.fence_agent import Fence
-from auto_evacuates.fence_agent import FENCE_NODES
 
 eventlet.monkey_patch()
-FENCE_NODE = FENCE_NODES
 
 
 class NovaService(object):

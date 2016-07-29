@@ -1,9 +1,8 @@
 import time
 from log import logger
 from openstack_novaclient import NovaClientObj as nova_client
-from novacheck.service.service import ServiceManage
+from novacheck.service import ServiceManage
 from send_email import Email
-# from novacheck.ipmi.ipmi import power_off
 
 
 class Fence(object):

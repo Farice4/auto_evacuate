@@ -1,5 +1,5 @@
 from auto_evacuates.novacheck.network import NetInterface
-from auto_evacuates.novacheck.service.service import ServiceManage
+from auto_evacuates.novacheck.service import ServiceManage
 from auto_evacuates.log import logger
 from auto_evacuates.fence_agent import Fence
 from auto_evacuates.evacuate_vm_action import EvacuateVmAction
