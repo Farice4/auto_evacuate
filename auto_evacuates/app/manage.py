@@ -25,8 +25,7 @@ class Manager(object):
 
         while True:
             try:
-                leder = NetInterface()
-                if leder.leader():
+                if self.net.obj.leader():
                     logger.info("Program start running, auto evacuate "
                                 "start check")
                     logger.info("Auto evacuate running network check")
