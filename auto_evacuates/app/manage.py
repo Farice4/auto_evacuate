@@ -27,7 +27,18 @@ class Manager(object):
         logger.info("Program start running, auto evacuate start check")
         logger.info("Auto evacuate running network check")
         self.net_checks = self._check_network()
+        if self.net_checks:
+            self._handle_network_error(self.net_checks)
 
+        logger.info("Auto evacuate running service check")
+        self.service_checks = self._check_service()
+        if self.service_check:
+            self._handle_service_error(self.service_check)
+
+    def _check_network(self):
+        return self.net_obj.get_net_status()
+
+    def _handle_network_error(self, net_checks):
         for net_check in self.net_checks:
             # default network check return error data ,
             # when network check  right,
@@ -73,8 +84,10 @@ class Manager(object):
                     logger.info("%s %s has auto recovery" % (network_node,
                                                              network_name))
 
-        logger.info("Auto evacuate running service check")
-        self.service_checks = self._check_service()
+    def _check_service(self):
+        return self.service_obj.get_service_status()
+
+    def _handle_service_error(self, service_checks):
         for service_check in self.service_checks:
             service_node = service_check['node']
             service_type = service_check['datatype']
@@ -114,12 +127,6 @@ class Manager(object):
                         else:
                             logger.info("%s %s has auto recovery" %
                                         (service_node, service_type))
-
-    def _check_network(self):
-        return self.net_obj.get_net_status()
-
-    def _check_service(self):
-        return self.service_obj.get_service_status()
 
     def _recover_network(self, node, name):
         """
@@ -176,4 +183,4 @@ class Manager(object):
             t = FENCE_NODE[role]
             t.append(node)
         else:
-            FENCE_NODE[role] = [node] 
+            FENCE_NODE[role] = [node]
