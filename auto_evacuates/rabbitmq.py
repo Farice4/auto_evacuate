@@ -1,12 +1,14 @@
 import pika
 import ConfigParser
+import json
+from log import logger
 
 
-class Py_Rabbitmq(object):
+class PyRabbitmq(object):
     def __init__(self):
         self.user = 'nova'
         self.port = 5673
-        self.msg_list = []
+        self.msg_list = None
 
     def rbt_connection(self):
         cf = ConfigParser.ConfigParser()
@@ -18,29 +20,50 @@ class Py_Rabbitmq(object):
             host = host_list.split(':')
             credential = pika.PlainCredentials(self.user, pwd)
             try:
-                pid = pika.ConnectionParameters(host[0], self.port,
-                                                '/', credential)
+                pid = pika.ConnectionParameters(
+                        host[0], self.port, '/', credential)
                 connection = pika.BlockingConnection(pid)
                 channel = connection.channel()
                 return channel
-            except Exception:
-                print 'error'
+            except Exception as e:
+                logger.error("connect rabbitmq failed: %s" % e)
 
     def callback(self, ch, method, properties, body):
-        self.msg_list.append(body)
+        self.msg_list = body
 
     def publish(self, msg_list):
         channel = self.rbt_connection()
         channel.exchange_declare(exchange='first', type='fanout')
         channel.queue_declare(queue='fence_nodes')
         channel.queue_bind(exchange='first', queue='fence_nodes')
-        for msg in msg_list:
-            channel.basic_publish(exchange='first', routing_key='',
-                                  body=msg)
+        msg = json.dumps(msg_list)
+        channel.basic_publish(
+                exchange='first', routing_key='', body=msg)
 
     def consume(self):
         channel = self.rbt_connection1()
         channel.queue_declare(queue='fence_nodes')
-        channel.basic_consume(self.callback, queue='fence_nodes',
-                              no_ack=True)
-        return self.msg_list
+        channel.basic_consume(
+                self.callback, queue='fence_nodes', no_ack=True)
+        if not self.msg_list:
+            return self.msg_list
+        else:
+            msg = json.loads(self.msg_list)
+            return msg
+
+
+def get_fence_nodes():
+    rbt_obj = PyRabbitmq()
+    fence_nodes = rbt_obj.consume()
+    if not fence_nodes:
+        return fence_nodes
+    else:
+        rbt_obj.publish(fence_nodes)
+        return fence_nodes
+
+
+def put_fence_nodes(fence_nodes):
+    rbt_obj = PyRabbitmq()
+    rbt_obj.consume()
+    if fence_nodes:
+        rbt_obj.publish(fence_nodes)

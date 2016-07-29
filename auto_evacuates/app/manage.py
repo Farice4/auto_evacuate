@@ -25,7 +25,7 @@ class Manager(object):
 
         while True:
             try:
-                if self.net.obj.leader():
+                if self.net_obj.leader():
                     logger.info("Program start running, auto evacuate "
                                 "start check")
                     logger.info("Auto evacuate running network check")
@@ -35,8 +35,8 @@ class Manager(object):
 
                     logger.info("Auto evacuate running service check")
                     self.service_checks = self._check_service()
-                    if self.service_check:
-                        self._handle_service_error(self.service_check)
+                    if self.service_checks:
+                        self._handle_service_error(self.service_checks)
                 else:
                     logger.info("This node is not the leader,"
                                 "no need to do any check")

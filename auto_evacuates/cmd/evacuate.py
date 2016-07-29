@@ -14,7 +14,7 @@ def main():
     if pid == 0:
         os.setsid()
         try:
-            Manager.run()
+            Manager().run()
         except Exception as e:
             # TODO: restart manager?
             logger.error("Failed to auto evacuate: %s" % e)
