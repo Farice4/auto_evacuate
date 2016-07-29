@@ -1,7 +1,5 @@
 from auto_evacuates.app.manage import Manager
-from auto_evacuates.novacheck.network.network import NetInterface
 from auto_evacuates.log import logger
-import time
 import os
 
 
