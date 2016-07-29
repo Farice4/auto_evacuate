@@ -1,6 +1,5 @@
 from auto_evacuates.novacheck.network.network import NetInterface
 from auto_evacuates.novacheck.service.service import ServiceManage
-from auto_evacuates.novacheck.ipmi.ipmi import get_ipmi_status as ipmi_check
 from auto_evacuates.log import logger
 from auto_evacuates.fence_agent import Fence
 from auto_evacuates.evacuate_vm_action import EvacuateVmAction
@@ -24,16 +23,28 @@ class Manager(object):
     def run(self):
         """runing will be schedule program all"""
 
-        logger.info("Program start running, auto evacuate start check")
-        logger.info("Auto evacuate running network check")
-        self.net_checks = self._check_network()
-        if self.net_checks:
-            self._handle_network_error(self.net_checks)
+        while True:
+            try:
+                leder = NetInterface()
+                if leder.leader():
+                    logger.info("Program start running, auto evacuate "
+                                "start check")
+                    logger.info("Auto evacuate running network check")
+                    self.net_checks = self._check_network()
+                    if self.net_checks:
+                        self._handle_network_error(self.net_checks)
 
-        logger.info("Auto evacuate running service check")
-        self.service_checks = self._check_service()
-        if self.service_check:
-            self._handle_service_error(self.service_check)
+                    logger.info("Auto evacuate running service check")
+                    self.service_checks = self._check_service()
+                    if self.service_check:
+                        self._handle_service_error(self.service_check)
+                else:
+                    logger.info("This node is not the leader,"
+                                "no need to do any check")
+            except Exception as e:
+                # TODO, catch speical exception, raise unknow excep to caller?
+                logger.error("Failed to auto evacuate: %s" % e)
+            time.sleep(30)
 
     def _check_network(self):
         return self.net_obj.get_net_status()
