@@ -5,13 +5,17 @@ from auto_evacuates.fence_agent import Fence
 from auto_evacuates.evacuate_vm_action import EvacuateVmAction
 import time
 
-# Manage is very important moudle, the program all operation
-# Use manage moudle  schedule
+"""
+FENCE_NODE is used to record the node whose status is fencing
+The format is like:
+{
+    'power': ['node-17','node-18'],
+    'network': ['node-19'],
+    'service': ['node-20', 'node-21']
+}
+"""
 
 FENCE_NODE = {}
-# FENCE_NODE use record has been fence node
-# FENCE_NODE data format: FENCE_NODE = {'power':['node-17','node-18'],
-# 'network': ['node-19'], 'service': ['node-20', 'node-21']}
 
 
 class Manager(object):
@@ -23,17 +27,16 @@ class Manager(object):
     def run(self):
         """runing will be schedule program all"""
 
+        logger.info("start worker")
         while True:
             try:
                 if self.net_obj.leader():
-                    logger.info("Program start running, auto evacuate "
-                                "start check")
-                    logger.info("Auto evacuate running network check")
+                    logger.debug("Start checking network")
                     self.net_checks = self._check_network()
                     if self.net_checks:
                         self._handle_network_error(self.net_checks)
 
-                    logger.info("Auto evacuate running service check")
+                    logger.debug("Start checking service")
                     self.service_checks = self._check_service()
                     if self.service_checks:
                         self._handle_service_error(self.service_checks)
