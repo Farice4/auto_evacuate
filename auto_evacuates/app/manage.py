@@ -80,7 +80,7 @@ class Manager(object):
                 network_recover_result = self._recover_network(network_node,
                                                                network_name)
                 if not network_recover_result:
-                    logger.info("Network recovery faild, Start fence node")
+                    logger.info("Network recovery faild, Node will be fence")
                     fence_result = self._fence('network',
                                                network_node,
                                                network_name)
@@ -90,7 +90,7 @@ class Manager(object):
                         self._evacuate(network_node)
                     else:
                         logger.error("fence %s error" % network_node)
-                else:
+                elif network_name == 'br-storage':
                     logger.info("%s %s has auto recovery" % (network_node,
                                                              network_name))
 
@@ -104,9 +104,9 @@ class Manager(object):
             service_status = service_check['status']
             if 'service' in FENCE_NODE.keys() and service_node in \
                     FENCE_NODE.get('service'):
-                if service_status == 'down' or service_status == 'known':
+                if service_status == 'down' or service_status == 'unknown':
                     logger.info("%s has been fence status,"
-                                "do not execute service"
+                                "do not execute service "
                                 "retry check" % service_node)
                 else:
                     # if service in FENCE_NODE, the service is recovery
@@ -125,7 +125,7 @@ class Manager(object):
                             service_node, service_type)
                         if not service_recover_result:
                             logger.info("Service recovery faild,"
-                                        "Start fence node")
+                                        "Node will be fence")
                             fence_result = self._fence('service',
                                                        service_node,
                                                        service_type)
@@ -135,7 +135,7 @@ class Manager(object):
                                 logger.error("fence %s error" % service_node)
 
                         else:
-                            logger.info("%s %s has auto recovery" %
+                            logger.info("%s %s has recovery succeed" %
                                         (service_node, service_type))
 
     def _recover_network(self, node, name):
@@ -144,6 +144,7 @@ class Manager(object):
         """
         flag = 0
         while flag < 3:
+            logger.warn("%s %s start retry: %d" % (node, name, flag+1))
             retry_result = self.net_obj.network_confirm(node, name)
             if retry_result:
                 return True
@@ -159,13 +160,14 @@ class Manager(object):
         include retry
         """
         for i in range(3):
+            logger.warn("%s %s start retry: %d" % (node, datatype, i+1))
             retry_result = self.service_obj.retry_service(node, datatype)
             if retry_result:
                 return True
             time.sleep(10)
         # service retry three time faild, will be execute recovery
         # service recovery, only execute openstack-nova-compute recovery
-        if self.service_obj.recovery_service(node, datatype):
+        if self.service_obj.recovery_service(node):
             return True
         return False
 

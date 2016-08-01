@@ -20,8 +20,9 @@ class PyRabbitmq(object):
             host = host_list.split(':')
             credential = pika.PlainCredentials(self.user, pwd)
             try:
-                pid = pika.ConnectionParameters(
-                        host[0], self.port, '/', credential)
+                pid = pika.ConnectionParameters(host[0],
+                                                self.port, '/',
+                                                credential)
                 connection = pika.BlockingConnection(pid)
                 channel = connection.channel()
                 return channel
@@ -37,14 +38,15 @@ class PyRabbitmq(object):
         channel.queue_declare(queue='fence_nodes')
         channel.queue_bind(exchange='first', queue='fence_nodes')
         msg = json.dumps(msg_list)
-        channel.basic_publish(
-                exchange='first', routing_key='', body=msg)
+        channel.basic_publish(exchange='first',
+                              routing_key='',
+                              body=msg)
 
     def consume(self):
         channel = self.rbt_connection1()
         channel.queue_declare(queue='fence_nodes')
-        channel.basic_consume(
-                self.callback, queue='fence_nodes', no_ack=True)
+        channel.basic_consume(self.callback, queue='fence_nodes',
+                              no_ack=True)
         if not self.msg_list:
             return self.msg_list
         else:

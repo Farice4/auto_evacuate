@@ -30,6 +30,8 @@ class Fence(object):
                                     % node)
                         return True
                     time.sleep(10)
+            else:
+                return True
 
         elif role == "service":
             self.server_manage.stop_nova_compute(node)
@@ -38,8 +40,12 @@ class Fence(object):
                 message = "%s service %s had been error " % (node, name)
                 email = Email()
                 email.send_email(message)
-                logger.info("send email with %s service %s had been error"
-                            % (node, name))
+                return True
+            else:
+                message = "%s service %s had been error " % (node, name)
+                email = Email()
+                email.send_email(message)
+                return True
 
     def _nova_service_status(self, node):
         """When execute evacuate, you must get service-list status disabled
@@ -53,6 +59,6 @@ class Fence(object):
                         # when execut vm_evacuate , must exec nova service
                         # check get nova service
                         # status and state
-                        logger.warn("%s has error, the instance will"
-                                    "evacuate" % node)
+                        logger.warn("%s has error, the instance do not create "
+                                    "instance" % node)
                         return True

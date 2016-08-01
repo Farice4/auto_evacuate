@@ -99,7 +99,8 @@ class ServiceManage(object):
     def __init__(self):
         # call NovaService class, check nova service status and
         # nova compute status
-        self.ns = NovaService()
+        # self.ns = NovaService()
+        pass
 
     def get_service_status(self):
         """ When manage get nova service check data ,will be return nova_status data
@@ -109,12 +110,12 @@ class ServiceManage(object):
         "datatype":"novaservice"}, {"node":"node-2", "status":"down",
         "datatype":"novacompute"}]
         """
-
+        ns = NovaService()
         nova_status = []
-        for i in self.ns.sys_compute(self.ns.compute):
+        for i in ns.sys_compute(ns.compute):
             nova_status.append(i)
 
-        for n in self.ns.ser_compute():
+        for n in ns.ser_compute():
             nova_status.append(n)
 
         return nova_status
@@ -122,31 +123,33 @@ class ServiceManage(object):
     def retry_service(self, node, datatype):
         """If first check false, the check will retry three times
         """
+        ns = NovaService()
         compute = []
         compute.append(node)
 
         if datatype == "novaservice":
-            status = self.ns.ser_compute()
+            status = ns.ser_compute()
         else:
-            status = self.ns.sys_compute(compute)
+            status = ns.sys_compute(compute)
 
         for n in status:
             if node in n.values() and 'up' in n.values():
                 # when retry, the node ser_compute service auto recovery,
                 # set count = retry_count
+                logger.info("%s %s has auto recovery" % (node, datatype))
                 return True
 
-    def recovery_service(self, node, datatype):
+    def recovery_service(self, node):
         """when nova-compute service down or faild, will be recovery
         nova-compute server
         """
-        if datatype == 'novacompute':
-            s, o = commands.getstatusoutput("ssh '%s' systemctl restart"
-                                            "openstack-nova-compute.service"
-                                            % node)
-            if s == 0 and o is not None:
-                if self.service_retry(node, "nodecompute"):
-                    return True
+        logger.warn("%s start recovery" % node)
+        s, o = commands.getstatusoutput("ssh %s systemctl restart "
+                                        "openstack-nova-compute.service"
+                                        % node)
+        if s == 0 and o is not None:
+            if self.retry_service(node, "novacompute"):
+                return True
 
     def stop_nova_compute(self, node):
         """Nova stop openstack-nova-compute service"""

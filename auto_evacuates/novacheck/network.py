@@ -93,9 +93,9 @@ class NetInterface(object):
         """
 
         if name == 'br-storage':
-            network = consul.Consul(host=self.storage_ip, port=8500)
+            network = consul.Consul(host=self.net_obj.storage_ip, port=8500)
         else:
-            network = consul.Consul(host=self.mgmt_ip, port=8500)
+            network = consul.Consul(host=self.net_obj.mgmt_ip, port=8500)
         t_members = network.agent.members()
         for t_member in t_members:
             if t_member['Name'] == node and t_member['Status'] != 1:
@@ -133,8 +133,6 @@ class NetInterface(object):
             message = "%s network %s had been error " % (node, name)
             email = Email()
             email.send_email(message)
-            logger.info("send email with %s network %s had been error" % (
-                node, name))
             return True
 
     def get_net_status(self):
