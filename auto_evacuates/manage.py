@@ -3,18 +3,27 @@ eventlet.monkey_patch()
 from auto_evacuates.consul_api import is_leader
 from auto_evacuates.log import logger
 from auto_evacuates.config import CONF
-from auto_evacuates.exception import IPMIError
+from auto_evacuates.exception import IPMIError, NovaClientError
 from auto_evacuates.ipmi import IPMIManager
+from auto_evacuates.fence import FenceOperation
+from auto_evacuates.novacomputeclient import NovaComputeClient
 import re
 import sys
 
 IPMI_ADDR_FILE = CONF.get('idrac', 'file')
+NOVACLIENT_AUTH = {'username': CONF.get('novaclient', 'username'),
+                   'api_key': CONF.get('novaclient', 'api_key'),
+                   'project_id': CONF.get('novaclient', 'project_id'),
+                   'auth_url': CONF.get('novaclient', 'auth_url'),
+                   'version': CONF.get('novaclient', 'version')}
 
 
 class Manager(object):
     def __init__(self):
         self.ipmi_objs = []
         self.pool = eventlet.GreenPool()  # give a greenthread size?
+        self.nova_compute_client = NovaComputeClient(NOVACLIENT_AUTH)
+        self.fence_op = FenceOperation(self.nova_compute_client)
 
     def run(self):
         """check cluster status every 30s, if some serious error
@@ -99,7 +108,18 @@ class Manager(object):
         self.pool.imap(self._handle_ipmi_one, error_nodes)
 
     def _handle_ipmi_one(self, node):
-        pass
+        try:
+            self.fence_op.fence_node_for_ipmi(node['hostname'])
+            logger.info("%s fence successed" % node['hostname'])
+        except NovaClientError as e:
+            logger.error("NovaClientError lead to fence %s failed:%s"
+                         % (node['hostname'], e))
+        except Exception as e:
+            logger.error("UnknownError lead to fence %s failed:%s"
+                         % (node['hostname'], e))
+
+        # check success or not
+        self.nova_compute_client.evacuate_all(node['hostname'])
 
     def _check_network(self):
         return []
