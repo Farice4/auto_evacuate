@@ -11,6 +11,8 @@ setup(
     keywords='EayunStack',
 
     entry_points={
-
+        'console_scripts': [
+              'autoevacuate = auto_evacuates.evacuate:main',
+          ],
     },
 )
