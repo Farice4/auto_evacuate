@@ -185,6 +185,11 @@ class Manager(object):
         try:
             self.fence_op.fence_node_for_ipmi(node['hostname'])
             logger.info("%s fence successed" % node['hostname'])
+            if self.nova_compute_client.evacuate_all(node['hostname']):
+                logger.info('evacuate instances from %s successed'
+                            % node['hostname'])
+            else:
+                self.fenced_node.remove_one(node['hostname'], FENCE_TYPE_POWER)
         except NovaClientError as e:
             logger.error("NovaClientError lead to fence %s failed:%s"
                          % (node['hostname'], e))
@@ -192,12 +197,6 @@ class Manager(object):
         except Exception as e:
             logger.error("UnknownError lead to fence %s failed:%s"
                          % (node['hostname'], e))
-            self.fenced_node.remove_one(node['hostname'], FENCE_TYPE_POWER)
-
-        if self.nova_compute_client.evacuate_all(node['hostname']):
-            logger.info('evacuate instances from %s successed'
-                        % node['hostname'])
-        else:
             self.fenced_node.remove_one(node['hostname'], FENCE_TYPE_POWER)
 
     def _check_network(self):
