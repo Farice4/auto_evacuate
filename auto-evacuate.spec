@@ -15,7 +15,6 @@ BuildRequires:  python-setuptools
 Requires:   python
 Requires:   python-novaclient
 Requires:   consul
-Requires:   pyghmi
 
 %description
 EayunStack Auto Evacuate Tool
