@@ -1,0 +1,13 @@
+[Unit]
+Description=EayunStack Auto Evacuate
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/autoevacuate
+Restart=always
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target

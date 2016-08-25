@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
 Version:    1.0
-Release:    1%{?dist}
+Release:    2%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
@@ -30,15 +30,20 @@ rm -rf %{buildroot}
 %{__python2} setup.py install --skip-build --root %{buildroot}
 mkdir -p %{buildroot}/etc/autoevacuate/
 cp evacuate.conf %{buildroot}/etc/autoevacuate/
+install -p -D -m 755 eayunstack-auto-evacuate.service %{buildroot}%{_unitdir}/eayunstack-auto-evacuate.service
 
 
 %files
 %doc
 %attr(0644, root,root)/etc/autoevacuate/evacuate.conf
+%{_unitdir}/eayunstack-auto-evacuate.service
 /usr/bin/autoevacuate
 /usr/lib/python2.7/site-packages/
 
 
 %changelog
+* Wed Aug 24 2016 blkart <blkart.org@gmail.com> 1.0-2
+  add systemd service
+
 * Tue Aug 16 2016 Chen Yuanbin <cybing4@gmail.com> 1.0-1
   autoevacuate 1.0-1 version
