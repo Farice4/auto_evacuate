@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
 Version:    1.0
-Release:    2%{?dist}
+Release:    3%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
@@ -42,6 +42,9 @@ install -p -D -m 755 eayunstack-auto-evacuate.service %{buildroot}%{_unitdir}/ea
 
 
 %changelog
+* Fri Aug 26 2016 Chen Yuanbin <cybing4@gmail.com> 1.0-3
+  Add Make file
+
 * Wed Aug 24 2016 blkart <blkart.org@gmail.com> 1.0-2
   add systemd service
 
