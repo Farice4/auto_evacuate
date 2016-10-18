@@ -164,17 +164,17 @@ class Manager(object):
     def _check_ipmi(self):
         """check ipmi power status"""
         error_nodes = []
-        try:
-            for i in self.ipmi_objs:
+        for i in self.ipmi_objs:
+            try:
                 if not i['manager'].is_power_on():
                     error_nodes.append(i)
-        except IPMIError as e:
-            logger.error("IPMI Error is: %s" % e)
-        except Exception as e:
-            logger.error("Unknown Error %s" % e)
-        finally:
-            return self._update_fence_and_error_node(FENCE_TYPE_POWER,
-                                                     error_nodes)
+            except IPMIError as e:
+                logger.error("IPMI Error is: %s" % e)
+            except Exception as e:
+                logger.error("Unknown Error %s" % e)
+
+        return self._update_fence_and_error_node(FENCE_TYPE_POWER,
+                                                 error_nodes)
 
     def _handle_ipmi_error(self, error_nodes):
         self.pool.imap(self._handle_ipmi_one, error_nodes)
