@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
 Version:    1.0
-Release:    4%{?dist}
+Release:    5%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
@@ -43,6 +43,9 @@ install -p -D -m 755 eayunstack-auto-evacuate.service %{buildroot}%{_unitdir}/ea
 
 
 %changelog
+* Tue Oct 18 2016 Chen Yuanbin <cybing4@gmail.com> 1.0-5
+  Fix endless loop if something wrong happend when doing ipmi check
+
 * Fri Aug 26 2016 blkart <blkart.org@gmail.com> 1.0-4
   add systemd to rpm buildrequires
 
