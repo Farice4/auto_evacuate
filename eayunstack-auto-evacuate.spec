@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
 Version:    1.0
-Release:    5%{?dist}
+Release:    6%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
@@ -16,6 +16,7 @@ BuildRequires:  systemd
 Requires:   python
 Requires:   python-novaclient
 Requires:   consul
+Requires:   python-consul
 
 %description
 EayunStack Auto Evacuate Tool
@@ -43,6 +44,9 @@ install -p -D -m 755 eayunstack-auto-evacuate.service %{buildroot}%{_unitdir}/ea
 
 
 %changelog
+* Wed Oct 19 2016 blkart <blkart.org@gmail.com> 1.0-6
+  add rpm dependencies - python-consul
+
 * Tue Oct 18 2016 Chen Yuanbin <cybing4@gmail.com> 1.0-5
   Fix endless loop if something wrong happend when doing ipmi check
 
