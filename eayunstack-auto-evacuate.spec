@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
-Version:    1.0
-Release:    6%{?dist}
+Version:    2.0
+Release:    0%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
