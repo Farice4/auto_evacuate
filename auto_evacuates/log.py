@@ -8,34 +8,51 @@ from auto_evacuates.config import CONF
 
 class LOGManager(object):
     def __init__(self):
-        self.LOG_PATH = CONF.get('log', 'path')
-        self.LOG_FILE = CONF.get('log', 'file')
-        self.LOG_LEVEL = CONF.get('log', 'default')
+        self.log_path = CONF.get('log', 'path')
+        self.log_file = CONF.get('log', 'file')
+        self.log_level = CONF.get('log', 'default')
+        # mailhost = (host, port)
+        exec('self.mailhost = %s' % CONF.get('log', 'mailhost'))
+        self.fromaddr = CONF.get('log', 'fromaddr')
+        # toaddrs = [addr1, addr2]
+        exec('self.toaddrs = %s' % CONF.get('log', 'toaddrs'))
+        self.user = CONF.get('log', 'user')
+        self.passwd = CONF.get('log', 'passwd')
 
-    def ensure_log_path(self):
+    def _set_log_path(self):
         # ensure LOG_PATH exists
-        if not os.path.exists(self.LOG_PATH):
-            os.mkdir(self.LOG_PATH)
+        if not os.path.exists(self.log_path):
+            os.mkdir(self.log_path)
             uid = pwd.getpwnam("nova").pw_uid
             gid = grp.getgrnam("root").gr_gid
-            os.chown(self.LOG_PATH, uid, gid)
+            os.chown(self.log_path, uid, gid)
 
-    def display_log(self):
+    def set_log_conf(self):
         """Log base configure"""
-        self.ensure_log_path()
+        self._set_log_path()
         dictLogConfig = {
             "version": 1,
             "handlers": {
                 "fileHandler": {
                     "class": "logging.FileHandler",
                     "formatter": "myFormatter",
-                    "filename": "%s" % self.LOG_FILE
+                    "filename": "%s" % self.log_file
+                },
+                "SMTPHandler": {
+                    "class": "logging.handlers.SMTPHandler",
+                    "level": "WARNING",
+                    "formatter": "myFormatter",
+                    "mailhost": self.mailhost,
+                    "fromaddr": self.fromaddr,
+                    "toaddrs": self.toaddrs,
+                    "subject": "eayunstack-auto-evacuate",
+                    "credentials": (self.user, self.passwd),
                 }
             },
             "loggers": {
                 "compute": {
-                    "handlers": ["fileHandler"],
-                    "level": "%s" % self.LOG_LEVEL,
+                    "handlers": ["fileHandler", "SMTPHandler"],
+                    "level": "%s" % self.log_level,
                 }
             },
 
@@ -54,4 +71,4 @@ class LOGManager(object):
         return logger
 
 logmanager = LOGManager()
-logger = logmanager.display_log()
+logger = logmanager.set_log_conf()

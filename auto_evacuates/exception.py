@@ -15,16 +15,11 @@ class NovaClientError(BaseException):
     pass
 
 
-class IPMIError(BaseException):
+class SSHError(BaseException):
 
     pass
 
 
-class NetworkError(BaseException):
-
-    pass
-
-
-class ServiceError(BaseException):
+class ConsulError(BaseException):
 
     pass
