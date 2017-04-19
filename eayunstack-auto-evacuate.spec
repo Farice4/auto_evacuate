@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
 Version:    2.0
-Release:    0%{?dist}
+Release:    1%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
@@ -44,6 +44,12 @@ install -p -D -m 755 eayunstack-auto-evacuate.service %{buildroot}%{_unitdir}/ea
 
 
 %changelog
+* Tue Apr 18 2017 pq     <19921207pq@gmail.com> 2.0-1
+  [bugfix] utils import error
+
+* Wed Feb 8  2017 pq     <19921207pq@gmail.com> 2.0-0
+  add_network_check
+
 * Wed Oct 19 2016 blkart <blkart.org@gmail.com> 1.0-6
   add rpm dependencies - python-consul
 
