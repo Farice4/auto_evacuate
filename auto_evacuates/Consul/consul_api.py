@@ -1,6 +1,6 @@
 import consul
 from auto_evacuates.exception import ConsulError
-from utils import try_except_consul
+from auto_evacuates.utils import try_except_consul
 
 
 def register_filter(func):
