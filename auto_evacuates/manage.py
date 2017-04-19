@@ -200,7 +200,7 @@ class Manager(object):
             # 2.fence by ipmi
             if ipmimanager.is_power_on():
                 ipmimanager.turn_power_off()
-            while ipmimanager.is_power_up():
+            while ipmimanager.is_power_on():
                 eventlet.sleep(3)
             logger.warn("%s fence successed" % hostname)
             # 3.evacuate by nova
