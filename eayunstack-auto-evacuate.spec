@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
 Version:    2.0
-Release:    1%{?dist}
+Release:    2%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
@@ -44,6 +44,9 @@ install -p -D -m 755 eayunstack-auto-evacuate.service %{buildroot}%{_unitdir}/ea
 
 
 %changelog
+* Thu May 4  2017 pq     <19921207pq@gmail.com> 2.0-2
+  [bugfix] edit evacuate.conf
+
 * Tue Apr 18 2017 pq     <19921207pq@gmail.com> 2.0-1
   [bugfix] utils import error
 
