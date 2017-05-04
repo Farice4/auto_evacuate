@@ -9,7 +9,7 @@ from novaclient import exceptions
 
 
 def ssh_connect(ipaddr, command, key_file=os.environ['HOME']
-                + '/.ssh/id_rsa', ssh_port=22, username='root',
+                + '/.ssh/id_rsa_ipmi', ssh_port=22, username='root',
                 timeout=3):
     """paramiko ssh client connect
 
