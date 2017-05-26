@@ -160,15 +160,30 @@ class Manager(object):
         except Exception as e:
             logger.error('Unknown Error is: %s' % e)
         err_nodes = ele_filter(err_nodes_list)
-        return self._update_fence_nodes(err_nodes)
+        # v2.0-3:change err_nodes to err_node_dicts
+        err_node_dicts = []
+        err_node_dict = {}
+        for err_node in err_nodes:
+            for compute_node in self.compute_nodes:
+                if err_node == compute_node['hostname']:
+                    err_node_dict['hostname'] = err_node
+                    err_node_dict['ipmimanager'] = compute_node['ipmimanager']
+            err_node_dicts.append(err_node_dict)
+        return self._update_fence_nodes(err_node_dicts)
 
     def _check_service(self):
         pass
 
-    def _update_fence_nodes(self, err_nodes):
+    def _update_fence_nodes(self, err_node_dicts):
         try:
             # 1.when the currect node is record, remove it from record
             fence_nodes = self.fence_node_manager.get()
+            # correct_nodes = [n for n in fence_nodes if n not in err_nodes]
+            # v2.0-3: change err_nodes to err_node_dicts
+            if err_node_dicts:
+                err_nodes = [n['hostname'] for n in err_node_dicts]
+            else:
+                err_nodes = []
             correct_nodes = [n for n in fence_nodes if n not in err_nodes]
             if correct_nodes:
                 logger.warn("%s has been up, remove from fence_node",
@@ -182,8 +197,11 @@ class Manager(object):
             logger.warn("Unknown Error lead to update fence nodes failed: %s"
                         % e)
         # 2.when error node isn't record, it's fence  and record
-        return [n for n in err_nodes
-                if n not in fence_nodes]
+        if err_node_dicts:
+            return [n for n in err_node_dicts
+                    if n['hostname'] not in fence_nodes]
+        else:
+            return None
 
     def _fence_and_evacuate(self, err_node_dict):
         hostname = err_node_dict['hostname']
@@ -224,15 +242,7 @@ class Manager(object):
             if not self.fence_node_manager.remove(hostname):
                 logger.warn("fence_node: %s remove failed!" % hostname)
 
-    def _handle_nodes(self, err_nodes):
-        err_node_dicts = []
-        err_node_dict = {}
-        for err_node in err_nodes:
-            for compute_node in self.compute_nodes:
-                if err_node == compute_node['hostname']:
-                    err_node_dict['hostname'] = err_node
-                    err_node_dict['ipmimanager'] = compute_node['ipmimanager']
-            err_node_dicts.append(err_node_dict)
+    def _handle_nodes(self, err_node_dicts):
         self.pool.imap(self._fence_and_evacuate, err_node_dicts)
 
     def run(self):
