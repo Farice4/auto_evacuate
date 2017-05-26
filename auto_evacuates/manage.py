@@ -82,11 +82,11 @@ class Manager(object):
         #   * according to ip and other params register check func
         #   * verify check can get true result as soon as possible
         # init network check
-        self._init_net_check(STORAGE_IFNAME)
+        compute_node_names = [node['hostname'] for node in self.compute_nodes]
+        self._init_net_check(STORAGE_IFNAME, compute_node_names)
         # init service check
         # ex: self._init_service_check(STORAGE_IFNAME)
         # init fence_node(storage)
-        compute_node_names = [node['hostname'] for node in self.compute_nodes]
         self.fence_node_manager = FenceNodeManager(self.current_ip,
                                                    compute_node_names)
         # 3.init network or service(mgmt datecenter) by consul
@@ -96,7 +96,7 @@ class Manager(object):
         # serive check
         # _init_service_check(MANAGER_IFNAME)
 
-    def _init_net_check(self, ifname):
+    def _init_net_check(self, ifname, compute_node_names):
         def _get_current_ip(ifname):
             command = ifname.join(["/sbin/ifconfig ",
                                    " |grep 'inet '|awk '/inet /{print $2}'"])
@@ -104,12 +104,13 @@ class Manager(object):
             return stdout
         self.current_ip = _get_current_ip(ifname)
         # for judge leader
-        self.network_manager[ifname] = NetworkManager(self.current_ip)
+        self.network_manager[ifname] = NetworkManager(self.current_ip, compute_node_names)
         for compute_node in self.compute_nodes:
             # to do: eventlet?
             # register in consul server agent use current_ip,
             # register in consul client agent use compute_node['storage_ip']
             net_manager = NetworkManager(compute_node[ifname],
+                                         compute_node_names,
                                          NET_TIME)
             try:
                 net_manager.set_network_check(compute_node[ifname],
