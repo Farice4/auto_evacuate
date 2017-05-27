@@ -1,6 +1,6 @@
 Name:       eayunstack-auto-evacuate
 Version:    2.0
-Release:    2%{?dist}
+Release:    3%{?dist}
 Summary:    EayunStack Auto Evacuate Tool
 
 Group:      Application
@@ -44,6 +44,9 @@ install -p -D -m 755 eayunstack-auto-evacuate.service %{buildroot}%{_unitdir}/ea
 
 
 %changelog
+* Fri May 26 2017 pq     <19921207pq@gmail.com> 2.0-3 
+  [bugfix] the node which leave from consul is error
+
 * Thu May 4  2017 pq     <19921207pq@gmail.com> 2.0-2
   [bugfix] edit evacuate.conf
 
